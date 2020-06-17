@@ -156,6 +156,11 @@ blackjackGame={
     'dealer': {'scoreSpan': '#dealer-blackjack-result', 'div': '#dealer-box', 'score':0},
     'cards' : ['2','3','4','5','6','7','8','9','10','K','J','Q','A'],
     'cardsMap' : {'2': 2,'3': 3,'4': 4,'5': 5,'6': 6,'7': 7,'8': 8,'9': 9,'10': 10,'K': 10,'J': 10,'Q': 10,'A':[1, 11]},
+    'wins' : 0,
+    'losses' : 0,
+    'draws' : 0,
+    'isStand' : false,
+    'turnsOver' : false,
 };
 
 
@@ -177,6 +182,7 @@ document.querySelector('#blackjack-deal-button').addEventListener('click', black
 
 
 function blackjackHit(){
+    if(blackjackGame['isStand']===false){
     let card= randomCards();
     console.log(card);
     showCard(card, You);
@@ -185,15 +191,27 @@ function blackjackHit(){
 
     console.log(You['score']);
 
+    }   
 }
 
-function dealerLogic(){
+function sleep(ms){
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function dealerLogic(){
+    blackjackGame['isStand'] = true;
+
+   while(Dealer['score'] < 16 && blackjackGame['isStand']===true){
     let card= randomCards();
     showCard(card, Dealer);
     updateScore(card, Dealer);
     showScore(Dealer);
+    await sleep(1000);
+    }
 
-    console.log(Dealer['score']);
+        blackjackGame['turnsOver'] = true;
+        let winner= computeWinner();
+        showResult(winner);
 }
 
 
@@ -210,7 +228,8 @@ function showCard(card, activePlayer){
 
 
 function blackjackDeal(){
-   showResult(computeWinner()) ;
+    if(blackjackGame['turnsOver']===true){
+    blackjackGame['isStand'] = false;
 let yourImage=document.querySelector('#your-box').querySelectorAll('img');
 let dealerImage=document.querySelector('#dealer-box').querySelectorAll('img');
 
@@ -231,6 +250,12 @@ document.querySelector('#dealer-blackjack-result').textContent=0;
 document.querySelector('#dealer-blackjack-result').style.color='#ffffff';
 document.querySelector('#dealer-blackjack-result').style.color='#ffffff';
 
+document.querySelector('#blackjack-result').textContent= "Let's play";
+document.querySelector('#blackjack-result').style.color='black';
+
+blackjackGame['turnsOver'] = true;
+
+  } 
 }
 
 
@@ -265,48 +290,55 @@ function showScore(activePlayer){
 } 
 
 //compute winner and return who just won
+// update compute winner, loses and draws
 function computeWinner(){
     let winner;
 
     if(You['score'] <= 21){
         //condition: higher score than dealer or when dealer busts you are
 if(You['score'] > Dealer['score'] || (Dealer['score'] > 21)){
-    console.log('You Won');
+    blackjackGame['wins']++;
     winner = You;
 }else if(Dealer['score'] > You['score']){
-    console.log('You Lost');
+    blackjackGame['losses']++;
     winner = Dealer;
 }else if(You['score'] === Dealer['score']){
-    console.log('You drew');
+    blackjackGame['draws']++;
 }
 //condition: when user bust but dealer doesn't
 
 
     }else if(You['score'] > 21 && Dealer['score'] <= 21){
-        console.log('You Lost');
+        blackjackGame['losses']++;
         winner = Dealer;
 
     }else if(You['score'] > 21 && Dealer['score'] > 21){
-        console.log('you Drew');
+        blackjackGame['draws']++;
     }
 
-    console.log('winner is', winner)
+    console.log(blackjackGame);
     return winner;
 }
 
 
 function showResult(winner){
+
     let message, messageColor;
 
+    if (blackjackGame['turnsOver']===true) {
+
     if(winner===You){
+        document.querySelector('#wins').textContent = blackjackGame['wins'];
         message= 'You Won';
         messageColor= 'green';
         winSound.play();
     }else if(winner===Dealer){
+        document.querySelector('#losses').textContent = blackjackGame['losses'];
         message= 'You Lost';
         messageColor='red';
         lossSound.play();
     }else{
+        document.querySelector('#draws').textContent = blackjackGame['draws'];
         message= 'You Drew';
         messageColor='black';
 
@@ -314,4 +346,5 @@ function showResult(winner){
     document.querySelector('#blackjack-result').textContent= message;
     document.querySelector('#blackjack-result').style.color= messageColor;
 
+  }
 }
